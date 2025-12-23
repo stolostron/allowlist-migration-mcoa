@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
@@ -17,7 +17,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.25.x'
-    # build using make build, run tests against this binary
+
     - name: Build
       run: make build
 

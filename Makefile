@@ -31,7 +31,7 @@ build-all: deps
 
 .PHONY: test
 test: deps
-	go test ./pkg/migration/...
+	go test ./...
 
 .PHONY: clean
 clean:
