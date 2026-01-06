@@ -15,7 +15,7 @@ build: deps
 	go build -o $(BIN_DIR)/allowlist-migration main.go
 
 .PHONY: build-all
-build-all: deps
+build-all:
 	@for OS in linux darwin windows; do for ARCH in amd64 arm64 ppc64le s390x; do \
 			if [[ $${OS} != "linux" ]] && [[ $${ARCH} != *"64" ]]; then continue; fi; \
 			echo "# Building $${OS}-$${ARCH}-allowlist-migration"; \
