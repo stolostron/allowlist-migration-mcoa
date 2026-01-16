@@ -23,29 +23,39 @@ ScrapeConfig and PrometheusRule CRDs must be installed on the hub cluster. CRDs 
    allowlist-migration <path/to/allowlist.yaml> <output/dir/> [targets.yaml]
    ```
    - The optional third argument specifies which key in the ConfigMap contains the metrics list (defaults to `metrics_list.yaml`).
-   - Output files are named `<configmap-name>-scrapeconfig.yaml` and `<configmap-name>-prometheusrule.yaml`.
+   - Output files are named `custom-scrapeconfig.yaml` and `custom-prometheusrule.yaml`.
 
-3. Replace the `<MCO-UID>` placeholder in both output files with the actual MCO UID.
-
-   i. Get the MCO UID:
-      ```
-      kubectl get multiclusterobservability observability -o jsonpath='{.metadata.uid}'
-      ```
-
-   ii. In each output file, replace `<MCO-UID>` with the value returned:
-      ```yaml
-      ownerReferences:
-      - apiVersion: observability.open-cluster-management.io/v1beta2
-        controller: true
-        kind: MultiClusterObservability
-        name: observability
-        uid: <MCO-UID>      # <-- REPLACE THIS
-      ```
-
-4. Apply the generated resources to the hub cluster:
+3. Apply the generated resources to the hub cluster:
    ```
-   oc apply -f <output/dir>/<configmap-name>-prometheusrule.yaml
-   oc apply -f <output/dir>/<configmap-name>-scrapeconfig.yaml
+   oc apply -f <output/dir>/custom-prometheusrule.yaml -n open-cluster-management-observability
+   oc apply -f <output/dir>/custom-scrapeconfig.yaml -n open-cluster-management-observability
+   ```
+
+4. Add the generated resources to the ClusterManagementAddOn resource
+
+   ```
+   kubectl patch clustermanagementaddon multicluster-observability-addon --type=json -p='[
+   {
+      "op": "add",
+      "path": "/spec/installStrategy/placements/0/configs/-",
+      "value": {
+         "group": "monitoring.rhobs",
+         "resource": "scrapeconfigs",
+         "name": "custom-scrapeconfig",
+         "namespace": "open-cluster-management-observability"
+      }
+   },
+   {
+      "op": "add",
+      "path": "/spec/installStrategy/placements/0/configs/-",
+      "value": {
+         "group": "monitoring.coreos.com",
+         "resource": "prometheusrules",
+         "name": "custom-prometheusrule",
+         "namespace": "open-cluster-management-observability"
+      }
+   }
+   ]'
    ```
 
 5. Verify configs have been applied:
@@ -59,3 +69,5 @@ ScrapeConfig and PrometheusRule CRDs must be installed on the hub cluster. CRDs 
      kubectl get ScrapeConfig -n open-cluster-management-agent-addon
      kubectl get PrometheusRule -n open-cluster-management-agent-addon
      ```
+
+   - Should now be able to verify that your custom metrics are being collected through querying grafana or perses UI. For example, if in your custom ScrapeConfig matches the metric `up`, you can query for `up{job="my-app"}` to verify the ScrapeConfig is being used. For PrometheusRule, if you have a recording rule for `avg_response_time` you can quickly verify it is working by running a query `avg_response_time`. Should also check that any alerts or dashboards that use these custom metrics are now being populated.

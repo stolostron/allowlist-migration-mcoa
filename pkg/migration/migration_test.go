@@ -19,7 +19,7 @@ func TestMigrateAllowlist(t *testing.T) {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "custom-allowlist",
+			Name:      "observability-metrics-custom-allowlist",
 			Namespace: "open-cluster-management-observability",
 		},
 		Data: map[string]string{
@@ -45,7 +45,7 @@ func TestMigrateAllowlist(t *testing.T) {
 			APIVersion: "monitoring.rhobs/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "custom-allowlist-scrapeconfig",
+			Name:      "custom-scrapeconfig",
 			Namespace: "open-cluster-management-observability",
 			Labels: map[string]string{
 				"app.kubernetes.io/component":  "platform-metrics-collector",
@@ -69,6 +69,7 @@ func TestMigrateAllowlist(t *testing.T) {
 				"match[]": {
 					`{__name__="up"}`,
 					`{__name__="container_memory_cache",container!=""}`,
+					`{__name__="container_memory_rss:sum"}`,
 				},
 			},
 		},
@@ -81,7 +82,7 @@ func TestMigrateAllowlist(t *testing.T) {
 			APIVersion: "monitoring.coreos.com/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "custom-allowlist-prometheusrule",
+			Name:      "custom-prometheusrule",
 			Namespace: "open-cluster-management-observability",
 			Labels: map[string]string{
 				"app.kubernetes.io/component":  "platform-metrics-collector",
@@ -101,7 +102,7 @@ func TestMigrateAllowlist(t *testing.T) {
 		Spec: promv1.PrometheusRuleSpec{
 			Groups: []promv1.RuleGroup{
 				{
-					Name: "custom-allowlist.rules",
+					Name: "custom-prometheusrule.rules",
 					Rules: []promv1.Rule{
 						{
 							Record: "container_memory_rss:sum",
@@ -129,20 +130,6 @@ func TestMigrateAllowlist(t *testing.T) {
 		t.Errorf("expected Namespace '%s', got '%s'", expectedScrapeConfig.Namespace, scrapeConfig.Namespace)
 	}
 
-	// Check OwnerReferences for ScrapeConfig
-	if len(scrapeConfig.OwnerReferences) != len(expectedScrapeConfig.OwnerReferences) {
-		t.Fatalf("expected %d OwnerReference(s), got %d", len(expectedScrapeConfig.OwnerReferences), len(scrapeConfig.OwnerReferences))
-	}
-	if scrapeConfig.OwnerReferences[0].Kind != expectedScrapeConfig.OwnerReferences[0].Kind {
-		t.Errorf("expected OwnerReference Kind '%s', got '%s'", expectedScrapeConfig.OwnerReferences[0].Kind, scrapeConfig.OwnerReferences[0].Kind)
-	}
-	if scrapeConfig.OwnerReferences[0].Name != expectedScrapeConfig.OwnerReferences[0].Name {
-		t.Errorf("expected OwnerReference Name '%s', got '%s'", expectedScrapeConfig.OwnerReferences[0].Name, scrapeConfig.OwnerReferences[0].Name)
-	}
-	if scrapeConfig.OwnerReferences[0].Controller == nil || !*scrapeConfig.OwnerReferences[0].Controller {
-		t.Errorf("expected OwnerReference Controller to be true")
-	}
-
 	if scrapeConfig.Spec.MetricsPath == nil || *scrapeConfig.Spec.MetricsPath != *expectedScrapeConfig.Spec.MetricsPath {
 		t.Errorf("expected MetricsPath '%s', got '%v'", *expectedScrapeConfig.Spec.MetricsPath, scrapeConfig.Spec.MetricsPath)
 	}
@@ -162,19 +149,6 @@ func TestMigrateAllowlist(t *testing.T) {
 		t.Errorf("expected Namespace '%s', got '%s'", expectedPrometheusRule.Namespace, prometheusRule.Namespace)
 	}
 
-	// Check OwnerReferences for PrometheusRule
-	if len(prometheusRule.OwnerReferences) != len(expectedPrometheusRule.OwnerReferences) {
-		t.Fatalf("expected %d OwnerReference(s), got %d", len(expectedPrometheusRule.OwnerReferences), len(prometheusRule.OwnerReferences))
-	}
-	if prometheusRule.OwnerReferences[0].Kind != expectedPrometheusRule.OwnerReferences[0].Kind {
-		t.Errorf("expected OwnerReference Kind '%s', got '%s'", expectedPrometheusRule.OwnerReferences[0].Kind, prometheusRule.OwnerReferences[0].Kind)
-	}
-	if prometheusRule.OwnerReferences[0].Name != expectedPrometheusRule.OwnerReferences[0].Name {
-		t.Errorf("expected OwnerReference Name '%s', got '%s'", expectedPrometheusRule.OwnerReferences[0].Name, prometheusRule.OwnerReferences[0].Name)
-	}
-	if prometheusRule.OwnerReferences[0].Controller == nil || !*prometheusRule.OwnerReferences[0].Controller {
-		t.Errorf("expected OwnerReference Controller to be true")
-	}
 	// Compare entire Spec using DeepEqual
 	if !reflect.DeepEqual(prometheusRule.Spec, expectedPrometheusRule.Spec) {
 		t.Errorf("PrometheusRule.Spec mismatch:\ngot:  %+v\nwant: %+v", prometheusRule.Spec, expectedPrometheusRule.Spec)

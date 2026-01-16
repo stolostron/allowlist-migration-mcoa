@@ -15,7 +15,7 @@ import (
 const testAllowlistYAML = `apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: test-allowlist
+  name: observability-metrics-custom-allowlist
   namespace: open-cluster-management-observability
 data:
   metrics_list.yaml: |
@@ -55,7 +55,7 @@ func TestValidInputProducesOutputFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create input allowlist file
-	inputFile := filepath.Join(tmpDir, "allowlist.yaml")
+	inputFile := filepath.Join(tmpDir, "observability-metrics-custom-allowlist.yaml")
 	if err := os.WriteFile(inputFile, []byte(testAllowlistYAML), 0644); err != nil {
 		t.Fatalf("failed to create input file: %v", err)
 	}
@@ -75,13 +75,13 @@ func TestValidInputProducesOutputFiles(t *testing.T) {
 		}
 
 		// Verify scrapeconfig file was created
-		scrapeConfigPath := filepath.Join(testOutputDir, "test-allowlist-scrapeconfig.yaml")
+		scrapeConfigPath := filepath.Join(testOutputDir, "custom-scrapeconfig.yaml")
 		if _, err := os.Stat(scrapeConfigPath); os.IsNotExist(err) {
 			t.Errorf("expected scrapeconfig file to exist at %s", scrapeConfigPath)
 		}
 
 		// Verify prometheusrule file was created
-		prometheusRulePath := filepath.Join(testOutputDir, "test-allowlist-prometheusrule.yaml")
+		prometheusRulePath := filepath.Join(testOutputDir, "custom-prometheusrule.yaml")
 		if _, err := os.Stat(prometheusRulePath); os.IsNotExist(err) {
 			t.Errorf("expected prometheusrule file to exist at %s", prometheusRulePath)
 		}
@@ -111,7 +111,7 @@ func TestValidInputProducesOutputFiles(t *testing.T) {
 		customAllowlistYAML := `apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: custom-test
+  name: observability-metrics-custom-allowlist
   namespace: open-cluster-management-observability
 data:
   custom_targets.yaml: |
@@ -123,7 +123,7 @@ data:
       - record: test_rule
         expr: sum(test_metric)
 `
-		customInputFile := filepath.Join(tmpDir, "custom_allowlist.yaml")
+		customInputFile := filepath.Join(tmpDir, "observability-metrics-custom-allowlist.yaml")
 		if err := os.WriteFile(customInputFile, []byte(customAllowlistYAML), 0644); err != nil {
 			t.Fatalf("failed to create custom input file: %v", err)
 		}
@@ -137,13 +137,13 @@ data:
 		}
 
 		// Verify scrapeconfig file was created
-		scrapeConfigPath := filepath.Join(testOutputDir, "custom-test-scrapeconfig.yaml")
+		scrapeConfigPath := filepath.Join(testOutputDir, "custom-scrapeconfig.yaml")
 		if _, err := os.Stat(scrapeConfigPath); os.IsNotExist(err) {
 			t.Errorf("expected scrapeconfig file to exist at %s", scrapeConfigPath)
 		}
 
 		// Verify prometheusrule file was created
-		prometheusRulePath := filepath.Join(testOutputDir, "custom-test-prometheusrule.yaml")
+		prometheusRulePath := filepath.Join(testOutputDir, "custom-prometheusrule.yaml")
 		if _, err := os.Stat(prometheusRulePath); os.IsNotExist(err) {
 			t.Errorf("expected prometheusrule file to exist at %s", prometheusRulePath)
 		}
