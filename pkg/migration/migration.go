@@ -70,12 +70,15 @@ func createScrapeConfig(allowlist operatorconfig.MetricsAllowlist, objMeta metav
 	fmt.Printf("  - NameList: %d entries\n", nameCnt)
 	fmt.Printf("  - MatchList: %d entries\n", matchCnt)
 
+	// Add recording rule name
+	for _, rule := range allowlist.RecordingRuleList {
+		matches = append(matches, fmt.Sprintf("{__name__=\"%s\"}", rule.Record))
+	}
 	labels := map[string]string{}
 	labels["app.kubernetes.io/component"] = "platform-metrics-collector"
 	labels["app.kubernetes.io/part-of"] = "multicluster-observability-addon"
 	labels["app.kubernetes.io/managed-by"] = "multicluster-observability-operator"
 
-	controller := true
 	jobName := "custom-job"
 	metricsPath := "/federate"
 	scrapeConfig := &prometheusalpha1.ScrapeConfig{
@@ -84,18 +87,9 @@ func createScrapeConfig(allowlist operatorconfig.MetricsAllowlist, objMeta metav
 			APIVersion: "monitoring.rhobs/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      objMeta.Name + "-scrapeconfig",
+			Name:      "custom-scrapeconfig",
 			Namespace: objMeta.Namespace,
 			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "observability.open-cluster-management.io/v1beta2",
-					Kind:       "MultiClusterObservability",
-					Name:       "observability",
-					UID:        "<MCO-UID>",
-					Controller: &controller,
-				},
-			},
 		},
 		Spec: prometheusalpha1.ScrapeConfigSpec{
 			JobName:     &jobName,
@@ -126,7 +120,6 @@ func createPrometheusRule(allowlist operatorconfig.MetricsAllowlist, objMeta met
 	}
 	fmt.Printf("  - RecordingRuleList: %d entries\n", ruleCnt)
 
-	controller := true
 	labels := map[string]string{}
 	labels["app.kubernetes.io/component"] = "platform-metrics-collector"
 	labels["app.kubernetes.io/part-of"] = "multicluster-observability-addon"
@@ -137,23 +130,14 @@ func createPrometheusRule(allowlist operatorconfig.MetricsAllowlist, objMeta met
 			APIVersion: "monitoring.coreos.com/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      objMeta.Name + "-prometheusrule",
+			Name:      "custom-prometheusrule",
 			Namespace: objMeta.Namespace,
 			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "observability.open-cluster-management.io/v1beta2",
-					Kind:       "MultiClusterObservability",
-					Name:       "observability",
-					UID:        "<MCO-UID>",
-					Controller: &controller,
-				},
-			},
 		},
 		Spec: promv1.PrometheusRuleSpec{
 			Groups: []promv1.RuleGroup{
 				{
-					Name:  objMeta.Name + ".rules",
+					Name:  "custom-prometheusrule.rules",
 					Rules: recordingRules,
 				},
 			},
